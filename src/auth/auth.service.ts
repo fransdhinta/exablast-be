@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UserProfileDto } from './dto/auth-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,5 +23,16 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async getProfile(userId: string): Promise<UserProfileDto> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+    
+    // Remove sensitive information
+    const { password, ...result } = user;
+    return result as UserProfileDto;
   }
 }

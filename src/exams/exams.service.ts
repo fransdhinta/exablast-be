@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -52,8 +52,68 @@ export class ExamsService {
   }
 
   async remove(id: string) {
-    return this.prisma.exam.delete({
-      where: { id },
+    // First check if exam exists
+    const exam = await this.prisma.exam.findUnique({ where: { id } });
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID ${id} not found`);
+    }
+
+    // Use a transaction to ensure all related entities are deleted
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Get all questions for this exam
+      const questions = await tx.question.findMany({
+        where: { examId: id },
+        select: { id: true },
+      });
+      const questionIds = questions.map(q => q.id);
+
+      // 2. Get all attempts for this exam
+      const attempts = await tx.attempt.findMany({
+        where: { examId: id },
+        select: { id: true },
+      });
+      const attemptIds = attempts.map(a => a.id);
+
+      // 3. Delete answers related to these attempts
+      if (attemptIds.length > 0) {
+        await tx.answer.deleteMany({
+          where: {
+            attemptId: { in: attemptIds }
+          },
+        });
+      }
+
+      // 4. Delete options related to these questions
+      if (questionIds.length > 0) {
+        await tx.option.deleteMany({
+          where: {
+            questionId: { in: questionIds }
+          },
+        });
+      }
+
+      // 5. Delete attempts
+      if (attemptIds.length > 0) {
+        await tx.attempt.deleteMany({
+          where: {
+            id: { in: attemptIds }
+          },
+        });
+      }
+
+      // 6. Delete questions
+      if (questionIds.length > 0) {
+        await tx.question.deleteMany({
+          where: {
+            id: { in: questionIds }
+          },
+        });
+      }
+
+      // 7. Finally delete the exam
+      return tx.exam.delete({
+        where: { id },
+      });
     });
   }
 }

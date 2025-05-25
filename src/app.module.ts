@@ -9,6 +9,7 @@ import { ExamsModule } from './exams/exams.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AiModule } from './ai/ai.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AttemptsModule } from './attempts/attempts.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     QuestionsModule,
     AiModule,
     DashboardModule,
+    AttemptsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

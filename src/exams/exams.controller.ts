@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -14,8 +14,11 @@ export class ExamsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  create(@Body() createExamDto: CreateExamDto) {
-    return this.examsService.create(createExamDto);
+  create(@Body() createExamDto: CreateExamDto, @Request() req) {
+    return this.examsService.create({
+      ...createExamDto,
+      createdById: req.user.id, // JWT stores user ID in req.user.id
+    });
   }
 
   @Get()

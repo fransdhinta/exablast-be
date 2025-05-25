@@ -1,6 +1,7 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { GenerateQuestionsDto } from './dto/generate-questions.dto';
+import { SaveQuestionsDto } from './dto/save-questions.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -16,5 +17,12 @@ export class AiController {
   @UseGuards(RolesGuard)
   generateQuestions(@Body() generateQuestionsDto: GenerateQuestionsDto) {
     return this.aiService.generateQuestions(generateQuestionsDto);
+  }
+
+  @Post('save-questions')
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  saveQuestions(@Body() saveQuestionsDto: SaveQuestionsDto) {
+    return this.aiService.saveQuestions(saveQuestionsDto);
   }
 }

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateQuestionsDto } from './dto/generate-questions.dto';
+import { SaveQuestionsDto } from './dto/save-questions.dto';
 
 @Injectable()
 export class AiService {
@@ -20,7 +21,7 @@ export class AiService {
   }
 
   async generateQuestions(generateQuestionsDto: GenerateQuestionsDto) {
-    const { topic, difficulty, count, examId } = generateQuestionsDto;
+    const { topic, difficulty, count } = generateQuestionsDto;
     
     try {
       // Create a prompt for Gemini
@@ -46,48 +47,14 @@ export class AiService {
       const content = response.text();
       
       try {
-        // Extract JSON from the response using regex (same as before)
+        // Extract JSON from the response using regex
         const jsonMatch = content?.match(/\[[\s\S]*\]/);
         const questionsData = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
         
-        // Store questions in database (unchanged)
-        const createdQuestions: Array<{
-          id: string;
-          text: string;
-          examId: string;
-          isGenerated: boolean;
-          options: Array<{
-            id: string;
-            text: string;
-            isCorrect: boolean;
-            questionId: string;
-          }>;
-        }> = [];
-        
-        for (const questionData of questionsData) {
-          const { text, options } = questionData;
-          
-          const question = await this.prisma.question.create({
-            data: {
-              text,
-              examId,
-              isGenerated: true,
-              options: {
-                create: options,
-              },
-            },
-            include: {
-              options: true,
-            },
-          });
-          
-          createdQuestions.push(question);
-        }
-        
         return {
           success: true,
-          count: createdQuestions.length,
-          questions: createdQuestions,
+          count: questionsData.length,
+          questions: questionsData,
         };
       } catch (parseError) {
         this.logger.error('Failed to parse AI response', parseError);
@@ -102,6 +69,58 @@ export class AiService {
       return {
         success: false,
         error: 'Failed to generate questions',
+      };
+    }
+  }
+
+  async saveQuestions(saveQuestionsDto: SaveQuestionsDto) {
+    const { questions, examId } = saveQuestionsDto;
+    
+    // Define explicit type for createdQuestions array
+    const createdQuestions: Array<{
+      id: string;
+      text: string;
+      examId: string;
+      isGenerated: boolean;
+      options: Array<{
+        id: string;
+        text: string;
+        isCorrect: boolean;
+        questionId: string;
+      }>;
+    }> = [];
+    
+    try {
+      for (const questionData of questions) {
+        const { text, options } = questionData;
+        
+        const question = await this.prisma.question.create({
+          data: {
+            text,
+            examId,
+            isGenerated: true,
+            options: {
+              create: options,
+            },
+          },
+          include: {
+            options: true,
+          },
+        });
+        
+        createdQuestions.push(question);
+      }
+      
+      return {
+        success: true,
+        count: createdQuestions.length,
+        questions: createdQuestions,
+      };
+    } catch (error) {
+      this.logger.error('Error saving questions to database', error);
+      return {
+        success: false,
+        error: 'Failed to save questions',
       };
     }
   }

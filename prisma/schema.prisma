@@ -22,6 +22,7 @@ model Exam {
   id         String     @id @default(uuid())
   title      String
   duration   Int        // in minutes
+  description String
   questions  Question[]
   createdBy  User       @relation("CreatedExams", fields: [createdById], references: [id])
   createdById String

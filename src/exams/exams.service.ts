@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,11 +8,17 @@ export class ExamsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createExamDto: CreateExamDto) {
+    // Check if createdById is provided
+    if (!createExamDto.createdById) {
+      throw new BadRequestException('Creator ID is required');
+    }
+
     return this.prisma.exam.create({
       data: {
         title: createExamDto.title,
         duration: createExamDto.duration,
-        createdById: createExamDto.createdById,
+        createdById: createExamDto.createdById, // Now TypeScript knows it's not undefined
+        description: createExamDto.description,
       },
     });
   }

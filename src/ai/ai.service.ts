@@ -21,11 +21,12 @@ export class AiService {
   }
 
   async generateQuestions(generateQuestionsDto: GenerateQuestionsDto) {
-    const { topic, difficulty, count } = generateQuestionsDto;
+    const { topic, difficulty, count, instructions } = generateQuestionsDto;
     
     try {
       // Create a prompt for Gemini
       const prompt = `Generate ${count} multiple-choice questions about ${topic} at ${difficulty} difficulty level. 
+      ${instructions ? `\nAdditional instructions: ${instructions}\n` : ''}
       For each question, provide 4 options with exactly 1 correct answer. 
       Format the response as a JSON array with objects containing: 
       {

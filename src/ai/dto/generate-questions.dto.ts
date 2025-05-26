@@ -1,9 +1,9 @@
-import { IsEnum, IsInt, IsNotEmpty, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 
 enum Difficulty {
-  EASY = 'easy',
-  MEDIUM = 'medium',
-  HARD = 'hard',
+  BEGINNER = 'beginner',
+  INTERMEDIATE = 'intermediate',
+  ADVANCED = 'advanced',
 }
 
 export class GenerateQuestionsDto {
@@ -23,5 +23,9 @@ export class GenerateQuestionsDto {
 
   @IsNotEmpty()
   @IsString()
-  examId: string; // String UUID in your schema
+  examId: string;
+
+  @IsOptional()
+  @IsString()
+  instructions?: string;
 }
